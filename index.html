@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#e63946">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Workout">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>My Workout</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,700;0,900;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --card: #16161e;
+    --border: #222230;
+    --red: #e63946;
+    --red-soft: rgba(230,57,70,0.12);
+    --green: #52b788;
+    --green-soft: rgba(82,183,136,0.12);
+    --amber: #f4a261;
+    --amber-soft: rgba(244,162,97,0.1);
+    --text: #eeeef5;
+    --muted: #7777a0;
+    --faint: #2a2a3a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow: hidden; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; display: flex; flex-direction: column; height: 100dvh; }
+
+  .tabs { display: flex; background: rgba(10,10,15,0.98); border-bottom: 1px solid var(--border); flex-shrink: 0; padding-top: env(safe-area-inset-top); }
+  .tab { flex: 1; padding: 14px 4px; text-align: center; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+  .tab.active { color: var(--text); border-bottom-color: var(--red); }
+
+  .pages { flex: 1; overflow: hidden; position: relative; }
+  .page { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; padding: 20px 16px 60px; display: none; -webkit-overflow-scrolling: touch; }
+  .page.active { display: block; }
+
+  .eyebrow { font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--red); font-weight: 600; margin-bottom: 6px; }
+  h1 { font-family: 'Fraunces', serif; font-size: 2.2rem; font-weight: 900; line-height: 1.05; }
+  h1 em { font-style: italic; color: var(--amber); }
+
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 16px 0; }
+  .stat { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
+  .stat.red { border-color: rgba(230,57,70,0.3); background: var(--red-soft); }
+  .stat.green { border-color: rgba(82,183,136,0.3); background: var(--green-soft); }
+  .stat.amber { border-color: rgba(244,162,97,0.3); background: var(--amber-soft); }
+  .stat-lbl { font-size: 9px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 3px; }
+  .stat-val { font-family: 'Fraunces', serif; font-size: 1.4rem; font-weight: 700; line-height: 1; }
+  .stat.red .stat-val { color: var(--red); }
+  .stat.green .stat-val { color: var(--green); }
+  .stat.amber .stat-val { color: var(--amber); }
+  .stat-note { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  .weight-bar { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .weight-lbl { font-size: 12px; color: var(--muted); }
+  .weight-lbl strong { display: block; font-size: 14px; color: var(--text); }
+  .w-ctrl { display: flex; align-items: center; gap: 12px; }
+  .w-btn { width: 34px; height: 34px; border-radius: 50%; background: var(--faint); border: none; color: var(--text); font-size: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.15s; }
+  .w-btn:active { background: var(--red); }
+  .w-num { font-family: 'Fraunces', serif; font-size: 1.3rem; color: var(--amber); min-width: 46px; text-align: center; }
+
+  /* TIMER BLOCK */
+  .timer-block { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 18px 16px; text-align: center; margin-bottom: 14px; }
+
+  /* EXERCISE VISUAL — two images side by side */
+  .ex-visual-row {
+    display: flex; gap: 8px; margin-bottom: 12px;
+  }
+  .ex-img-wrap {
+    flex: 1; position: relative; border-radius: 10px; overflow: hidden;
+    background: var(--faint); aspect-ratio: 16/9;
+  }
+  .ex-img-wrap img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+  }
+  .ex-img-label {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: rgba(0,0,0,0.65); color: #fff;
+    font-size: 10px; font-weight: 600; text-align: center;
+    padding: 3px 0; letter-spacing: 0.05em; text-transform: uppercase;
+  }
+  .ex-img-wrap.loading { display: flex; align-items: center; justify-content: center; }
+  .ex-img-wrap.loading::after { content: '⏳'; font-size: 1.4rem; }
+
+  .watch-btn {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    background: rgba(255,0,0,0.15); border: 1px solid rgba(255,60,60,0.35);
+    border-radius: 8px; padding: 8px 14px; margin-bottom: 12px;
+    font-size: 12px; font-weight: 600; color: #ff6b6b;
+    cursor: pointer; text-decoration: none; transition: background 0.2s;
+    width: 100%;
+  }
+  .watch-btn:active { background: rgba(255,0,0,0.25); }
+  .watch-btn .yt-icon { font-size: 1rem; }
+
+  .phase-pill { display: inline-block; padding: 3px 14px; border-radius: 20px; font-size: 10px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 6px; transition: all 0.3s; background: var(--red-soft); color: var(--red); border: 1px solid rgba(230,57,70,0.3); }
+  .phase-pill.rest { background: var(--green-soft); color: var(--green); border-color: rgba(82,183,136,0.3); }
+
+  .timer-big { font-family: 'Fraunces', serif; font-size: 4.5rem; font-weight: 900; line-height: 1; color: var(--text); margin-bottom: 4px; transition: color 0.2s; }
+  .timer-big.hot { color: var(--red); }
+  .timer-big.cool { color: var(--green); }
+
+  .ex-name-now { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+  .ex-hint-now { font-size: 11px; color: var(--muted); margin-bottom: 14px; line-height: 1.4; min-height: 30px; }
+
+  .ctrl-row { display: flex; gap: 10px; justify-content: center; }
+  .btn-main { font-family: 'DM Sans', sans-serif; background: var(--red); color: #fff; border: none; border-radius: 50px; padding: 13px 30px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+  .btn-main:active { transform: scale(0.97); }
+  .btn-ghost { font-family: 'DM Sans', sans-serif; background: var(--faint); color: var(--muted); border: none; border-radius: 50px; padding: 13px 18px; font-size: 13px; font-weight: 500; cursor: pointer; }
+  .btn-ghost:active { color: var(--text); }
+
+  .prog-row { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+  .prog-bar { flex: 1; height: 3px; background: var(--border); border-radius: 10px; overflow: hidden; }
+  .prog-fill { height: 100%; background: linear-gradient(90deg, var(--red), var(--amber)); border-radius: 10px; transition: width 0.5s; }
+  .prog-lbl { font-size: 11px; color: var(--muted); font-family: monospace; white-space: nowrap; }
+
+  .section-lbl { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; margin-top: 4px; }
+  .ex-list { display: flex; flex-direction: column; gap: 7px; }
+  .ex-card { background: var(--card); border: 1.5px solid var(--border); border-radius: 13px; padding: 12px 14px; display: flex; align-items: flex-start; gap: 12px; cursor: pointer; }
+  .ex-card:active { background: var(--surface); }
+  .ex-card.active { border-color: var(--red); background: var(--red-soft); }
+  .ex-card.done { border-color: rgba(82,183,136,0.4); background: var(--green-soft); opacity: 0.75; }
+  .ex-num { width: 28px; height: 28px; border-radius: 7px; background: var(--faint); color: var(--muted); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; font-family: monospace; flex-shrink: 0; transition: all 0.25s; }
+  .ex-card.active .ex-num { background: var(--red); color: #fff; }
+  .ex-card.done .ex-num { background: var(--green); color: #fff; }
+  .ex-body { flex: 1; }
+  .ex-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+  .ex-desc { font-size: 11px; color: var(--muted); line-height: 1.4; font-weight: 300; }
+  .ex-badges { display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap; }
+  .bdg { font-size: 10px; padding: 2px 7px; border-radius: 20px; font-weight: 500; }
+  .bdg-w { background: var(--red-soft); color: var(--red); border: 1px solid rgba(230,57,70,0.25); }
+  .bdg-r { background: var(--green-soft); color: var(--green); border: 1px solid rgba(82,183,136,0.25); }
+  .bdg-m { background: rgba(100,100,200,0.1); color: #9999dd; border: 1px solid rgba(100,100,200,0.2); }
+  .ex-right { flex-shrink: 0; font-size: 12px; font-family: monospace; color: var(--amber); }
+  .ex-card.done .ex-right { color: var(--green); }
+
+  .done-banner { display: none; text-align: center; padding: 28px 18px; margin-top: 14px; background: var(--card); border: 1px solid rgba(82,183,136,0.4); border-radius: 18px; }
+  .done-banner.show { display: block; }
+  .done-icon { font-size: 2.8rem; margin-bottom: 10px; }
+  .done-banner h2 { font-family: 'Fraunces', serif; font-size: 1.6rem; color: var(--green); margin-bottom: 6px; }
+  .done-banner p { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+  /* FOOD PAGE */
+  .food-alert { background: var(--red-soft); border: 1px solid rgba(230,57,70,0.25); border-radius: 13px; padding: 14px 16px; margin-bottom: 18px; font-size: 12px; color: var(--muted); line-height: 1.6; }
+  .food-alert strong { color: var(--red); }
+  .food-section { margin-bottom: 22px; }
+  .food-section-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .food-section-head h3 { font-size: 13px; font-weight: 600; color: var(--text); flex: 1; }
+  .sev { font-size: 9px; padding: 2px 9px; border-radius: 20px; font-weight: 700; letter-spacing: 0.05em; }
+  .sev-c { background: var(--red-soft); color: var(--red); border: 1px solid rgba(230,57,70,0.3); }
+  .sev-h { background: var(--amber-soft); color: var(--amber); border: 1px solid rgba(244,162,97,0.3); }
+  .sev-m { background: rgba(100,100,200,0.1); color: #8888cc; border: 1px solid rgba(100,100,200,0.2); }
+  .food-item { background: var(--card); border: 1px solid var(--border); border-radius: 11px; padding: 11px 13px; display: flex; gap: 10px; margin-bottom: 7px; }
+  .fi-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+  .fi-name { font-size: 13px; font-weight: 500; color: var(--text); }
+  .fi-why { font-size: 11px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+  .fi-swap { font-size: 11px; color: var(--green); margin-top: 4px; }
+  .fi-swap::before { content: '→ '; opacity: 0.5; }
+  .act-card { background: var(--card); border: 1px solid var(--border); border-radius: 11px; padding: 12px 14px; display: flex; gap: 11px; margin-bottom: 7px; }
+  .act-icon { font-size: 1.3rem; flex-shrink: 0; }
+  .act-name { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+  .act-why { font-size: 11px; color: var(--muted); line-height: 1.4; }
+
+  /* TIPS PAGE */
+  .tip { background: var(--green-soft); border: 1px solid rgba(82,183,136,0.22); border-radius: 12px; padding: 13px 15px; margin-bottom: 8px; font-size: 12px; color: var(--muted); line-height: 1.55; }
+  .tip strong { color: var(--green); }
+</style>
+</head>
+<body>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('workout',this)">Workout</div>
+  <div class="tab" onclick="switchTab('food',this)">Avoid</div>
+  <div class="tab" onclick="switchTab('tips',this)">Tips</div>
+</div>
+
+<div class="pages">
+
+<!-- WORKOUT PAGE -->
+<div class="page active" id="page-workout">
+  <div class="eyebrow">Nightly routine</div>
+  <h1>Burn the fat.<br><em>Keep the muscle.</em></h1>
+
+  <div class="stats-grid">
+    <div class="stat red"><div class="stat-lbl">Body Fat</div><div class="stat-val">33.9%</div><div class="stat-note">Target ~20%</div></div>
+    <div class="stat red"><div class="stat-lbl">Visceral Fat</div><div class="stat-val">13.0</div><div class="stat-note">Target under 9</div></div>
+    <div class="stat green"><div class="stat-lbl">Muscle Mass</div><div class="stat-val">65.6kg</div><div class="stat-note">Excellent ✓</div></div>
+    <div class="stat amber"><div class="stat-lbl">BMR</div><div class="stat-val">2021</div><div class="stat-note">kcal/day at rest</div></div>
+  </div>
+
+  <div class="weight-bar">
+    <div class="weight-lbl">Dumbbell weight<strong id="wLabel">3.0 kg each</strong></div>
+    <div class="w-ctrl">
+      <button class="w-btn" onclick="changeW(-0.5)">−</button>
+      <div class="w-num" id="wNum">3.0</div>
+      <button class="w-btn" onclick="changeW(0.5)">+</button>
+    </div>
+  </div>
+
+  <div class="timer-block">
+    <!-- Exercise images: start + end position -->
+    <div class="ex-visual-row" id="exVisualRow">
+      <div class="ex-img-wrap">
+        <img id="imgStart" src="" alt="Start position" onerror="this.parentElement.innerHTML='<div style=\'padding:20px;font-size:11px;color:#7777a0\'>START</div>'">
+        <div class="ex-img-label">Start</div>
+      </div>
+      <div class="ex-img-wrap">
+        <img id="imgEnd" src="" alt="End position" onerror="this.parentElement.innerHTML='<div style=\'padding:20px;font-size:11px;color:#7777a0\'>END</div>'">
+        <div class="ex-img-label">End</div>
+      </div>
+    </div>
+
+    <!-- Watch tutorial link -->
+    <a class="watch-btn" id="watchBtn" href="#" target="_blank" rel="noopener">
+      <span class="yt-icon">▶</span> Watch Tutorial on YouTube
+    </a>
+
+    <div class="phase-pill" id="phasePill">Ready</div>
+    <div class="timer-big" id="timerBig">0:40</div>
+    <div class="ex-name-now" id="exNameNow">Press Start</div>
+    <div class="ex-hint-now" id="exHintNow">6 compound exercises · ~7 minutes</div>
+    <div class="ctrl-row">
+      <button class="btn-main" id="startBtn" onclick="toggleTimer()">Start</button>
+      <button class="btn-ghost" onclick="skipEx()">Skip →</button>
+      <button class="btn-ghost" onclick="resetAll()">↺</button>
+    </div>
+  </div>
+
+  <div class="prog-row">
+    <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+    <div class="prog-lbl" id="progLbl">0/6</div>
+  </div>
+
+  <div class="section-lbl">Exercises</div>
+  <div class="ex-list" id="exList"></div>
+
+  <div class="done-banner" id="doneBanner">
+    <div class="done-icon">🔥</div>
+    <h2>Session done.</h2>
+    <p>Every session builds your metabolism.<br>Show up again tomorrow.</p>
+  </div>
+</div>
+
+<!-- FOOD PAGE -->
+<div class="page" id="page-food">
+  <div class="eyebrow">What's working against you</div>
+  <h1>Know it.<br><em>Avoid it.</em></h1>
+  <div class="food-alert" style="margin-top:14px">Your visceral fat <strong>13.0</strong> is directly driven by certain foods. Even cutting <em>one</em> category makes a real difference. Start with Critical.</div>
+  <div class="food-section">
+    <div class="food-section-head"><span>🚨</span><h3>Critical — Feeds Visceral Fat Directly</h3><span class="sev sev-c">Critical</span></div>
+    <div class="food-item"><div class="fi-icon">🥤</div><div><div class="fi-name">Sugary drinks — soda, juice, energy drinks</div><div class="fi-why">Liquid sugar spikes insulin fast, goes straight to visceral fat. Worst offender for your score.</div><div class="fi-swap">Water, sparkling water, unsweetened tea or coffee</div></div></div>
+    <div class="food-item"><div class="fi-icon">🍟</div><div><div class="fi-name">Fried food — fries, fried chicken, samosas</div><div class="fi-why">Trans & saturated fats store 3x more likely as visceral fat vs other fat types.</div><div class="fi-swap">Grilled, baked, or air-fried versions</div></div></div>
+    <div class="food-item"><div class="fi-icon">🍰</div><div><div class="fi-name">Baked goods — cakes, cookies, pastries</div><div class="fi-why">Sugar + saturated fat combined is the worst combo for visceral fat.</div><div class="fi-swap">Dates, fruit, or a small square of dark chocolate</div></div></div>
+  </div>
+  <div class="food-section">
+    <div class="food-section-head"><span>⚠️</span><h3>High Impact — Limit These</h3><span class="sev sev-h">High</span></div>
+    <div class="food-item"><div class="fi-icon">🍞</div><div><div class="fi-name">White bread, white rice, white pasta</div><div class="fi-why">Refined carbs digest like sugar — rapid blood sugar spike, fat storage.</div><div class="fi-swap">Brown rice, whole wheat, or just smaller portions</div></div></div>
+    <div class="food-item"><div class="fi-icon">🥩</div><div><div class="fi-name">Fatty processed meats — sausage, bacon</div><div class="fi-why">High saturated fat + sodium linked directly to visceral fat growth.</div><div class="fi-swap">Chicken breast, turkey, eggs, tuna</div></div></div>
+    <div class="food-item"><div class="fi-icon">🍺</div><div><div class="fi-name">Alcohol</div><div class="fi-why">Body burns alcohol before fat — fat loss completely stops while alcohol is in your system.</div><div class="fi-swap">Sparkling water with lemon at social events</div></div></div>
+  </div>
+  <div class="food-section">
+    <div class="food-section-head"><span>📌</span><h3>Moderate — Watch Portions</h3><span class="sev sev-m">Moderate</span></div>
+    <div class="food-item"><div class="fi-icon">🍦</div><div><div class="fi-name">Ice cream, candy, chocolate bars</div><div class="fi-why">High-fructose corn syrup processed directly into belly fat by the liver.</div><div class="fi-swap">70%+ dark chocolate, 1–2 squares max</div></div></div>
+    <div class="food-item"><div class="fi-icon">📦</div><div><div class="fi-name">Frozen / packaged meals</div><div class="fi-why">High sodium causes water retention, hidden sugars add up fast.</div><div class="fi-swap">Eggs + anything is better than most packaged meals</div></div></div>
+  </div>
+  <div class="section-lbl">Activities to avoid</div>
+  <div class="act-card"><div class="act-icon">🛋️</div><div><div class="act-name">Sitting 2+ hours without moving</div><div class="act-why">Shuts off the enzyme that burns fat. Stand up every 45–60 min.</div></div></div>
+  <div class="act-card"><div class="act-icon">🌙</div><div><div class="act-name">Eating right before sleeping</div><div class="act-why">Carbs and sugar eaten late get stored as fat. Stop eating 2 hours before bed.</div></div></div>
+  <div class="act-card"><div class="act-icon">😴</div><div><div class="act-name">Less than 6 hours sleep</div><div class="act-why">Raises hunger hormones, lowers fullness hormones. Body holds fat harder when sleep-deprived.</div></div></div>
+  <div class="act-card"><div class="act-icon">🏃</div><div><div class="act-name">Running, jumping, burpees</div><div class="act-why">High-impact risks real joint injury at your current weight. Stick to these exercises until you drop 15–20kg.</div></div></div>
+</div>
+
+<!-- TIPS PAGE -->
+<div class="page" id="page-tips">
+  <div class="eyebrow">Smart moves</div>
+  <h1>Work smarter.<br><em>Not harder.</em></h1>
+  <div style="margin-top:16px"></div>
+  <div class="tip"><strong>🥇 Biggest single change:</strong> Replace sugary drinks with water. Just this, nothing else, reduces visceral fat over 3 months. A can of soda is ~150 kcal — that's 7% of your entire daily burn just sitting there.</div>
+  <div class="tip"><strong>💧 Drink more water.</strong> Your body water is 47.2% — should be 55–65%. Low hydration slows metabolism, increases hunger, and makes joints hurt more. Aim for 2.5–3 litres a day.</div>
+  <div class="tip"><strong>🚶 Walk after eating.</strong> Even 10 minutes blunts the blood sugar spike from that meal — directly reducing how much gets stored as fat.</div>
+  <div class="tip"><strong>🍽️ Eat protein first.</strong> When you sit down to eat, start with the meat, eggs, or legumes. Fills you faster so you naturally eat fewer carbs after.</div>
+  <div class="tip"><strong>⏰ Stop eating 2 hours before bed.</strong> Do the workout, then stop eating. Your body fasts overnight and burns fat while you sleep.</div>
+  <div class="tip"><strong>💪 Your secret weapon:</strong> Your 65.6kg muscle mass burns ~900–1000 kcal/day just existing — nearly half your BMR. Most people your size have far less. The workout keeps this engine alive.</div>
+  <div class="tip"><strong>📈 Realistic target:</strong> With nightly workouts and cutting Critical foods, expect 1–2kg loss per month. Visceral fat drops faster than total weight — your joints will feel it within the first month.</div>
+  <div class="tip"><strong>🔁 Consistency beats intensity.</strong> 7 minutes every night beats 1 hour once a week. Show up, press Start, done.</div>
+</div>
+
+</div>
+
+<script>
+const exercises = [
+  {
+    name: "Romanian Deadlift",
+    desc: "Hinge at hips, lower dumbbells down your legs, squeeze glutes to stand. Keep back flat.",
+    work: 40, rest: 20,
+    muscles: "Hamstrings · Glutes · Back",
+    // YouTube video ID for tutorial
+    ytId: "aa57T45iFSE",
+    // thumbnail indices: YouTube generates these automatically
+    // maxresdefault, hqdefault, mqdefault, sddefault, default
+    // We use hqdefault (frame ~25%) for start and a different timestamp for end
+    // For start/end we use two different thumbnail resolutions that show different frames
+    imgStart: "https://img.youtube.com/vi/aa57T45iFSE/1.jpg",
+    imgEnd:   "https://img.youtube.com/vi/aa57T45iFSE/2.jpg",
+  },
+  {
+    name: "Dumbbell Squat",
+    desc: "Feet shoulder-width, dumbbells at sides. Squat as low as comfortable. Push through heels.",
+    work: 40, rest: 20,
+    muscles: "Quads · Glutes · Core",
+    ytId: "v_c67Omje48",
+    imgStart: "https://img.youtube.com/vi/v_c67Omje48/1.jpg",
+    imgEnd:   "https://img.youtube.com/vi/v_c67Omje48/2.jpg",
+  },
+  {
+    name: "Bent-Over Row",
+    desc: "Hinge slightly forward. Pull both dumbbells up toward hips, elbows back. Great for posture.",
+    work: 40, rest: 20,
+    muscles: "Back · Biceps",
+    ytId: "knB5Q4FN4ck",
+    imgStart: "https://img.youtube.com/vi/knB5Q4FN4ck/1.jpg",
+    imgEnd:   "https://img.youtube.com/vi/knB5Q4FN4ck/2.jpg",
+  },
+  {
+    name: "Curl to Press",
+    desc: "Curl dumbbells up then press overhead. Lower slowly. Work the full range.",
+    work: 40, rest: 20,
+    muscles: "Biceps · Shoulders · Core",
+    ytId: "zdQOmPMGjOY",
+    imgStart: "https://img.youtube.com/vi/zdQOmPMGjOY/1.jpg",
+    imgEnd:   "https://img.youtube.com/vi/zdQOmPMGjOY/2.jpg",
+  },
+  {
+    name: "Reverse Lunge",
+    desc: "Step one foot back, lower until comfortable. Push through front heel to return. Alternate legs.",
+    work: 40, rest: 20,
+    muscles: "Quads · Glutes · Balance",
+    ytId: "GcYirgCLhnI",
+    imgStart: "https://img.youtube.com/vi/GcYirgCLhnI/1.jpg",
+    imgEnd:   "https://img.youtube.com/vi/GcYirgCLhnI/2.jpg",
+  },
+  {
+    name: "Standing Twist",
+    desc: "Hold one dumbbell with both hands at chest. Rotate torso left then right. Controlled sweep.",
+    work: 40, rest: 15,
+    muscles: "Core · Obliques",
+    ytId: "PbqN516HvO8",
+    imgStart: "https://img.youtube.com/vi/PbqN516HvO8/1.jpg",
+    imgEnd:   "https://img.youtube.com/vi/PbqN516HvO8/2.jpg",
+  },
+];
+
+let curIdx=0, timeLeft=0, isWork=true, running=false, iv=null, done=new Set(), weight=3.0;
+
+function fmt(s){ return Math.floor(s/60)+':'+(s%60+'').padStart(2,'0'); }
+
+function loadEx(idx, work){
+  const ex = exercises[idx];
+  isWork = work;
+  timeLeft = work ? ex.work : ex.rest;
+  document.getElementById('timerBig').textContent = fmt(timeLeft);
+  document.getElementById('timerBig').className = 'timer-big';
+  document.getElementById('exNameNow').textContent = ex.name;
+  document.getElementById('exHintNow').textContent = work ? ex.desc : `Rest — next: ${idx+1 < exercises.length ? exercises[idx+1].name : 'Last one!'}`;
+  // Update images
+  document.getElementById('imgStart').src = ex.imgStart;
+  document.getElementById('imgEnd').src = ex.imgEnd;
+  // Update watch button
+  document.getElementById('watchBtn').href = 'https://www.youtube.com/watch?v=' + ex.ytId;
+  const p = document.getElementById('phasePill');
+  p.textContent = work ? 'Work' : 'Rest';
+  p.className = work ? 'phase-pill' : 'phase-pill rest';
+}
+
+function renderList(){
+  document.getElementById('exList').innerHTML = exercises.map((ex,i) => `
+    <div class="ex-card ${i===curIdx?'active':''} ${done.has(i)?'done':''}" onclick="jumpTo(${i})">
+      <div class="ex-num">${done.has(i)?'✓':i+1}</div>
+      <div class="ex-body">
+        <div class="ex-title">${ex.name}</div>
+        <div class="ex-desc">${ex.desc}</div>
+        <div class="ex-badges">
+          <span class="bdg bdg-w">${ex.work}s</span>
+          <span class="bdg bdg-r">rest ${ex.rest}s</span>
+          <span class="bdg bdg-m">${ex.muscles}</span>
+        </div>
+      </div>
+      <div class="ex-right">${ex.work+ex.rest}s</div>
+    </div>`).join('');
+}
+
+function updateProg(){
+  const pct = (done.size/exercises.length)*100;
+  document.getElementById('progFill').style.width = pct+'%';
+  document.getElementById('progLbl').textContent = done.size+'/'+exercises.length;
+}
+
+function toggleTimer(){
+  if(running){ clearInterval(iv); running=false; document.getElementById('startBtn').textContent='Resume'; }
+  else {
+    if(curIdx>=exercises.length) return;
+    running=true; document.getElementById('startBtn').textContent='Pause';
+    iv=setInterval(tick,1000);
+  }
+}
+
+function tick(){
+  timeLeft--;
+  document.getElementById('timerBig').textContent = fmt(timeLeft);
+  if(timeLeft<=5 && isWork) document.getElementById('timerBig').className='timer-big hot';
+  else if(!isWork) document.getElementById('timerBig').className='timer-big cool';
+  if(timeLeft<=0){
+    if(isWork){ loadEx(curIdx, false); }
+    else {
+      done.add(curIdx); curIdx++; updateProg(); renderList();
+      if(curIdx>=exercises.length){
+        clearInterval(iv); running=false;
+        document.getElementById('timerBig').textContent='0:00';
+        document.getElementById('exNameNow').textContent='All done!';
+        document.getElementById('exHintNow').textContent='';
+        document.getElementById('startBtn').textContent='Start';
+        document.getElementById('phasePill').textContent='Complete';
+        document.getElementById('doneBanner').classList.add('show');
+        return;
+      }
+      loadEx(curIdx, true);
+    }
+  }
+}
+
+function skipEx(){
+  clearInterval(iv); running=false;
+  if(isWork){ loadEx(curIdx, false); }
+  else {
+    done.add(curIdx); curIdx++; updateProg(); renderList();
+    if(curIdx>=exercises.length){ document.getElementById('doneBanner').classList.add('show'); return; }
+    loadEx(curIdx, true);
+  }
+  document.getElementById('startBtn').textContent='Start';
+}
+
+function jumpTo(idx){
+  if(done.has(idx)) return;
+  clearInterval(iv); running=false; curIdx=idx;
+  loadEx(idx, true); renderList();
+  document.getElementById('startBtn').textContent='Start';
+}
+
+function resetAll(){
+  clearInterval(iv); running=false; curIdx=0; done=new Set();
+  document.getElementById('doneBanner').classList.remove('show');
+  loadEx(0, true); updateProg(); renderList();
+  document.getElementById('startBtn').textContent='Start';
+}
+
+function changeW(d){
+  weight = Math.min(7, Math.max(0.5, Math.round((weight+d)*2)/2));
+  document.getElementById('wNum').textContent = weight.toFixed(1);
+  document.getElementById('wLabel').textContent = weight.toFixed(1)+' kg each';
+}
+
+function switchTab(name, el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  el.classList.add('active');
+}
+
+// Init
+loadEx(0, true); updateProg(); renderList();
+
+// PWA service worker
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
