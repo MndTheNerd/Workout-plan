@@ -292,20 +292,16 @@
 </div>
 
 <script>
+const BASE = "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises";
 const exercises = [
   {
     name: "Romanian Deadlift",
     desc: "Hinge at hips, lower dumbbells down your legs, squeeze glutes to stand. Keep back flat.",
     work: 40, rest: 20,
     muscles: "Hamstrings · Glutes · Back",
-    // YouTube video ID for tutorial
     ytId: "aa57T45iFSE",
-    // thumbnail indices: YouTube generates these automatically
-    // maxresdefault, hqdefault, mqdefault, sddefault, default
-    // We use hqdefault (frame ~25%) for start and a different timestamp for end
-    // For start/end we use two different thumbnail resolutions that show different frames
-    imgStart: "https://img.youtube.com/vi/aa57T45iFSE/1.jpg",
-    imgEnd:   "https://img.youtube.com/vi/aa57T45iFSE/2.jpg",
+    imgStart: BASE + "/Romanian_Deadlift/0.jpg",
+    imgEnd:   BASE + "/Romanian_Deadlift/1.jpg",
   },
   {
     name: "Dumbbell Squat",
@@ -313,8 +309,8 @@ const exercises = [
     work: 40, rest: 20,
     muscles: "Quads · Glutes · Core",
     ytId: "v_c67Omje48",
-    imgStart: "https://img.youtube.com/vi/v_c67Omje48/1.jpg",
-    imgEnd:   "https://img.youtube.com/vi/v_c67Omje48/2.jpg",
+    imgStart: BASE + "/Dumbbell_Squat/0.jpg",
+    imgEnd:   BASE + "/Dumbbell_Squat/1.jpg",
   },
   {
     name: "Bent-Over Row",
@@ -322,8 +318,8 @@ const exercises = [
     work: 40, rest: 20,
     muscles: "Back · Biceps",
     ytId: "knB5Q4FN4ck",
-    imgStart: "https://img.youtube.com/vi/knB5Q4FN4ck/1.jpg",
-    imgEnd:   "https://img.youtube.com/vi/knB5Q4FN4ck/2.jpg",
+    imgStart: BASE + "/Barbell_Rear_Delt_Row/0.jpg",
+    imgEnd:   BASE + "/Barbell_Rear_Delt_Row/1.jpg",
   },
   {
     name: "Curl to Press",
@@ -331,8 +327,8 @@ const exercises = [
     work: 40, rest: 20,
     muscles: "Biceps · Shoulders · Core",
     ytId: "zdQOmPMGjOY",
-    imgStart: "https://img.youtube.com/vi/zdQOmPMGjOY/1.jpg",
-    imgEnd:   "https://img.youtube.com/vi/zdQOmPMGjOY/2.jpg",
+    imgStart: BASE + "/Dumbbell_Alternate_Bicep_Curl/0.jpg",
+    imgEnd:   BASE + "/Dumbbell_Shoulder_Press/0.jpg",
   },
   {
     name: "Reverse Lunge",
@@ -340,8 +336,8 @@ const exercises = [
     work: 40, rest: 20,
     muscles: "Quads · Glutes · Balance",
     ytId: "GcYirgCLhnI",
-    imgStart: "https://img.youtube.com/vi/GcYirgCLhnI/1.jpg",
-    imgEnd:   "https://img.youtube.com/vi/GcYirgCLhnI/2.jpg",
+    imgStart: BASE + "/Dumbbell_Rear_Lunge/0.jpg",
+    imgEnd:   BASE + "/Dumbbell_Rear_Lunge/1.jpg",
   },
   {
     name: "Standing Twist",
@@ -349,8 +345,8 @@ const exercises = [
     work: 40, rest: 15,
     muscles: "Core · Obliques",
     ytId: "PbqN516HvO8",
-    imgStart: "https://img.youtube.com/vi/PbqN516HvO8/1.jpg",
-    imgEnd:   "https://img.youtube.com/vi/PbqN516HvO8/2.jpg",
+    imgStart: BASE + "/Russian_Twist/0.jpg",
+    imgEnd:   BASE + "/Russian_Twist/1.jpg",
   },
 ];
 
